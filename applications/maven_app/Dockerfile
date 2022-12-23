@@ -3,7 +3,7 @@ WORKDIR /app
 COPY . /app
 COPY ./libraries /root/.m2
 RUN cd ./target; ls
-RUN mvn clean package -Dmaven.test.skip=true
+RUN mvn clean package 
 
 FROM tomcat:8.0-alpine
 RUN rm -rf /usr/local/tomcat/webapps/ROOT
