@@ -1,0 +1,280 @@
+kubernetes Architecture 	
+	The architecture of k8s differs from master and worker node 
+
+	Master node components 
+		1. Api Server / kube-api-server
+			- It is the main management point of the cluster and also called 
+			  as brain of the cluster.
+			- All the components are directly connected to API serve, they 
+			  communicate through API server only and no other component will 
+			  communicate directly with each other.
+			- This is the only component which connects and got access to etcd.
+			- All the cluster requests are authenticated and authorised by API server.
+			- API server has a watch mechanism for watching the changes in cluster.
+			
+		2. etcd 
+			- ectd is a distributed , consistent key value store used for 
+			  storing the complete cluster information/data.
+			- ectd contains data such as configuration management of cluster,
+              distributed work and basically complete cluster information.			
+			
+		3. scheduler / kube-scheduler
+			- The scheduler always watches for a new pod request and 
+			  decides which worker node this pod should be created.
+			- Based on the worker node load, affinity and anti-affiny, taint configuration 
+			  pod will be scheduled to a particular node.
+			  
+		Controller manager /control manager / kube-controller 
+			- It is a daemon that always runs and embeds core control loops known as controllers. 
+			- K8s has some inbuild controllers such as Deployment, DaemonSet, ReplicaSet, Replication controller,
+			  node controller, jobs, cronjob, endpoint controller, namespace controller etc.	
+			
+		Cloud controller manager 
+			- These controller help us to connect with the public cloud provider service and this component 
+			  is maintained by cloud providers only.
+
+Worker node components 
+		kubelet 
+			- It is an agent that runs on each and every worker node and it alsways watches the API 
+			  server for pod related changes running in its worker node.
+			- kubelet always make sure that the assigend pods to its worker node is running.
+			- kubelet is the one which communicates with containarisation tool (docker daemon)
+              		  through docker API (CRI). 	
+			- work of kubelet is to create and run the pods. Always reports the status of the worker node 
+			  and each pod to API server. (uses a tool call cAdvisor)
+			- Kubelet is the one which runs probes.	
+		
+		kube service proxy 
+			(in k8s service means networking)
+			- Service proxy runs on each and every worker node and is responsble for watching API 
+			  server for any changes in service configuration (any network related configuration).	
+			- Based on the configuration service proxy manages the entire network of worker node.
+
+		Container runtime interface (CRI)
+			- This component initialy identifies the container technology and connects it to kubelet.
+			
+			
+		pod
+			- pods are the smallest deployable object in kuberntes.
+			- pod should contain atleast one container and can have n number of containers.
+			- If pod contains more than one container all the container share the same memory assigned to that pod.
+
+
+
+Assignment: What happens when a new pod request comes to (control plane / Master node) ? 
+
+Namespaces and cgroups
+	- Docker uses linux namespaces to provide isolated workspace for processes called
+	  conatainer
+	- when a container is created, docker creates a set of namespaces for it and provides 
+	  a layer of isolation for container.
+	- Each container run in a different namespace 
+	
+	namespace (To list - lsns)
+		cgroups 
+			- Linux OS uses cgroups to manage the available hardware resources such as 
+			  cpu, RAM, Disk, I/O.
+			- we can control tje access and also we can apply the limitations 
+
+			To list - lscgroup	
+		pid - namespace for managing processes (process isolation)
+		user - namespace for non-root user on linux.
+		uts - namespace for unix timesharing system which isolates kernel and version identifiers,
+			  time bonding of process.
+		ipc - (interprocess communication) namespace for managing the process communication.	  
+		mnt - namespace for managing filesystem mounts.
+		net - namespace for managing network interfaces.
+
+ 
+npm / yarn 
+   node js - Backend 
+   React js - FrontEnd (RJS) 
+   Vue js - FrontEnd (HTML - CSS - RJS) 
+
+
+YAML File 	
+   - filetype .yaml or .yml 
+   - YAML file contains key - value pairs where key is fixed and defined by
+     kubernetes and value is user defined.	  
+
+   - Values supports - string, Integer, Boolean, Array, List 
+
+example:
+
+List Representation 
+name: Harsha 	
+hobbies: ["Coding", "Watching movies"]
+ 
+	    (OR)
+
+name: Harsha 	
+hobbies: 
+	- Coding
+	- Watching movies
+
+
+employees:
+ employee:
+            - name: harsha
+              fist_name: harsha
+	      second_name: Jain	 
+            - name: Mohan
+
+
+k8s yaml syntax example 
+
+apiVersion: v1 
+kind: Pod 
+metadata: 
+   name: my-first-pod
+   labels: 
+	app: my-nginx	
+spec: 
+   containers: 
+         - name: my-nginx 
+           image: nginx:latest
+           ports:
+            - containerPort: 80   
+            - containerPort: 443 
+
+	apiVersion: v1
+		- This is the version of api used to create a k8s object.
+		- The fields are case-sensitive and YAML use camelcase.
+		- The type of api are alpha, beta and stable.
+		
+	kind: Pod
+		- here we specify which object we need to create. 
+		- Always object name first letter is capital.
+		
+	metadata:
+	    - This field is used to provide information on the object 
+		  which we are creating.
+		- Information such as name, labels and annotations. 	
+	
+	spec:
+		- This is used to do the actual configuration of the 
+		  object.
+
+		 ports: 
+		    - containerPort: 80	
+
+
+To create / apply a configuration 
+	kubectl apply -f <file>.yml	
+	
+To list objects 
+	kubectl get <obeject_type>
+		ex: List pods - kubectl get pods 
+		    List deployment - kubectl get deployments
+			
+To delete objects 
+	kubectl delete <object_type>
+
+
+Labels and Selector 
+
+Labels 
+ 	- Labels is a metadata key-values used which can be applied to any object in k8s.
+	- labels are used to identify any object by using selectors.
+	- Multiple objects can have same label 
+	- Same object can have multiple label 
+	- The length of each label value should be less that 63 characters.
+		
+Selectors
+ 	- Selectors are used to filter and identify the any labeled objects matching the label key-value and 
+	  condition of selector.
+	
+Equality-based selector 
+	- we can use only one label in comparison and it will look for exact match 
+	- Operators that can be used  equal_to ( = or == ) and not_equal_to ( != )
+	ex: 
+		 selector:
+    			matchLabels:
+     			app: nginx
+
+		       (OR)
+
+		 selector:
+    			matchLabels:
+     			app=nginx
+
+Set-based selector 
+	- We can select / filter objects based on multiple set of values to a label key 
+	- Operators that we can use in, notin and exists 
+	ex: 
+		 selector:
+    			matchLabels:
+     			app in (nginx, my-nginx, nginx1, nginx2)
+			
+			app notin (nginx, my-nginx, nginx1, nginx2)	
+		 
+			app exists (nginx, my-nginx, nginx1, nginx2)	
+	
+	
+Annotations: 
+	- These are non-identifying metadata so we can't use Selectors on annotations.
+	- This for record purpose only, like we can provide some user information to objects.
+	ex: personal_info, phone_number, imageregistry, author 	
+		metadata: 
+			annotations: 
+				author: harsha 
+	
+ReplicaSet vs Replication Controller 
+	- Both ensures that a specified number of pod replicas are always running at 
+	  a given point of time.
+	- Replication Controller is old way of replicating pods and it is now replaced by ReplicaSet.
+	
+	The only difference between ReplicaSet & Replication Controller
+	   - Replication Controller supports only Equality-based selector.
+	   - ReplicaSet controller supports both Equality-based and Set-based selector.	
+				
+Deployment controller / Deployment / Deployment k8s
+	- Deployment is used to create replicas of pod and It makes sure that at a given point 
+	  of time that number of replicas of pods is always running by using ReplicaSet controller.
+	- If we update the configuration of deployment, it will automatically updates in all the pod replicas.
+	- Rollout and Rollback of pod update is possible. We can use different deployment strategy for update,
+	  by default it uses RollingUpdate. 
+		Other strategies: canary, Recreate, Ramped and Blue-Green 
+	- we can pause the deployment whenever we need.
+	- Deployment internally got its own autoscaler which is of type horizontal smaller.
+	 
+	  RollingUpdate	
+		MaxSurge 
+		  - Specifies the maximum number of pods the Deployment is allowed to create at one time. 
+		  - You can specify this as a whole number (e.g. 5), or as a percentage of the total required number of pods 		
+		         (e.g. 10%, always rounded up to the next whole number). 
+		  - If you do not set MaxSurge, the implicit, default value is 25%.
+		
+		MaxUnavailable 
+		  - specifies the maximum number of pods that are allowed to be unavailable during the rollout. 
+		  - Like MaxSurge, you can define it as an absolute number or a percentage. 
+	
+	To scale up and scale down 
+		1. We can update the replicas count in spec / configuration / yaml file.
+		2. We can use kubectl cli 
+			kubectl scale deployment.v1.apps/nginx-deployment --replicas=10
+
+	To autoscale 
+		1. kubectl autoscale deployment.v1.apps/nginx-deployment --min=5 --max=10 --cpu-percent=80
+
+	deployment = pod + ReplicaSet + autoscalling + RollingUpdate 
+	
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
